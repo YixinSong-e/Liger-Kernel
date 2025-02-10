@@ -104,6 +104,6 @@ class LigerReLU2MulFunction(torch.autograd.Function):
     @staticmethod
     @ensure_contiguous
     def backward(ctx, dc):
-        a = ctx.saved_tensors
+        a, = ctx.saved_tensors
         a = relu2_backward(a, dc)
         return a
