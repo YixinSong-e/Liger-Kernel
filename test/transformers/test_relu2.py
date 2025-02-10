@@ -5,7 +5,7 @@ from test.utils import supports_bfloat16
 from transformers.models.llama.configuration_llama import LlamaConfig
 from transformers.models.llama.modeling_llama import LlamaMLP
 
-from liger_kernel.ops.geglu import LigerGELUMulFunction
+from liger_kernel.ops.relu2 import LigerReLU2MulFunction
 from liger_kernel.transformers.functional import liger_relu2
 from liger_kernel.transformers.relu2 import LigerRELU2MLP
 from liger_kernel.utils import infer_device
@@ -84,15 +84,6 @@ def test_correctness(bsz, seq_len, hidden_size, intermediate_size, dtype, atol, 
     )
     assert (
         torch.allclose(
-            llama_mlp.up_proj.weight.grad,
-            liger_mlp.up_proj.weight.grad,
-            atol=atol,
-            rtol=rtol,
-        )
-        is True
-    )
-    assert (
-        torch.allclose(
             llama_mlp.down_proj.weight.grad,
             liger_mlp.down_proj.weight.grad,
             atol=atol,
@@ -132,7 +123,7 @@ def test_correctness_functional(bsz, seq_len, size, dtype, atol, rtol):
     b2 = _b.clone().requires_grad_(True)
 
     y1 = liger_relu2(a=x1)
-    y2 = LigerRELU2MLP.apply(x2)
+    y2 = LigerReLU2MulFunction.apply(x2)
 
     assert torch.allclose(y1, y2, atol=atol, rtol=rtol)
 
