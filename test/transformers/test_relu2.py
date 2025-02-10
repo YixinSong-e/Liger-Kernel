@@ -119,8 +119,6 @@ def test_correctness_functional(bsz, seq_len, size, dtype, atol, rtol):
     x1 = _input.clone().requires_grad_(True)
     x2 = _input.clone().requires_grad_(True)
 
-    b1 = _b.clone().requires_grad_(True)
-    b2 = _b.clone().requires_grad_(True)
 
     y1 = liger_relu2(a=x1)
     y2 = LigerReLU2MulFunction.apply(x2)
@@ -133,4 +131,3 @@ def test_correctness_functional(bsz, seq_len, size, dtype, atol, rtol):
     y2.backward(grad_output)
 
     assert torch.allclose(x1.grad, x2.grad, atol=atol, rtol=rtol)
-    assert torch.allclose(b1.grad, b2.grad, atol=atol, rtol=rtol)
