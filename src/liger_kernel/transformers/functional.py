@@ -4,6 +4,7 @@ from liger_kernel.ops.cross_entropy import LigerCrossEntropyFunction
 from liger_kernel.ops.fused_linear_cross_entropy import LigerFusedLinearCrossEntropyFunction
 from liger_kernel.ops.fused_linear_jsd import LigerFusedLinearJSDFunction
 from liger_kernel.ops.geglu import LigerGELUMulFunction
+from liger_kernel.ops.relu2 import LigerReLU2MulFunction
 from liger_kernel.ops.group_norm import LigerGroupNormFunction
 from liger_kernel.ops.jsd import LigerJSDFunction
 from liger_kernel.ops.kl_div import LigerKLDivLossFunction
@@ -100,6 +101,8 @@ def liger_fused_linear_jsd(
 
 def liger_geglu(a, b):
     return LigerGELUMulFunction.apply(a, b)
+def liger_relu2(a):
+    return LigerReLU2MulFunction.apply(a)
 
 
 def liger_group_norm(

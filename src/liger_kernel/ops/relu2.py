@@ -30,15 +30,13 @@ def _squared_relu_forward_kernel(a_ptr, c_ptr, stride, n_cols: tl.constexpr, BLO
     # store result
     tl.store(c_ptr + col_offsets, squared_relu_a, mask=mask)
 
-
 @triton.jit
-def _squared_relu_backward_kernel(dc_ptr, a_ptr, da_ptr, stride, n_cols: tl.constexpr, BLOCK_SIZE: tl.constexpr):
+def _squared_relu_backward_kernel(dc_ptr, a_ptr, stride, n_cols: tl.constexpr, BLOCK_SIZE: tl.constexpr):
     program_id = tl.program_id(0).to(tl.int64)
 
     # locate start index
     dc_ptr += program_id * stride
     a_ptr += program_id * stride
-    da_ptr += program_id * stride
 
     col_offsets = tl.arange(0, BLOCK_SIZE)
     mask = col_offsets < n_cols
@@ -52,8 +50,8 @@ def _squared_relu_backward_kernel(dc_ptr, a_ptr, da_ptr, stride, n_cols: tl.cons
     relu_grad = (a_row > 0).to(tl.float32)  # Gradient of ReLU (indicator function)
     da_row = 2 * relu_a * relu_grad * dc_row  # Gradient of squared ReLU
 
-    # store gradient
-    tl.store(da_ptr + col_offsets, da_row, mask=mask)
+    # store gradient back to a_ptr (in-place update)
+    tl.store(a_ptr + col_offsets, da_row, mask=mask)
 
 def relu2_forward(a):
     ori_shape = a.shape
@@ -73,10 +71,10 @@ def relu2_forward(a):
         BLOCK_SIZE=BLOCK_SIZE,
         num_warps=num_warps,
     )
-    return a, b, c.view(*ori_shape)
+    return a, c.view(*ori_shape)
 
 
-def relu2_backward(a, b, dc):
+def relu2_backward(a, dc):
     ori_shape = dc.shape
     n_cols = ori_shape[-1]
     dc = dc.view(-1, n_cols)
@@ -87,13 +85,12 @@ def relu2_backward(a, b, dc):
     _squared_relu_backward_kernel[(n_rows,)](
         dc,
         a,
-        b,
         dc.stride(-2),
         n_cols=n_cols,
         BLOCK_SIZE=BLOCK_SIZE,
         num_warps=num_warps,
     )
-    return a.view(*ori_shape), b.view(*ori_shape)
+    return a.view(*ori_shape)
 
 
 class LigerReLU2MulFunction(torch.autograd.Function):
